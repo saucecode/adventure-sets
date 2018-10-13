@@ -10,10 +10,11 @@ const int SYMBOL_SET = 4;
 const int SYMBOL_CHOICE = 8;
 
 typedef struct {
-	int type; // STRING or SET or CHOICE
-	int elements; // Number of elements in the set
-	void *data; // a cstring if STRING or a symbol_t*
+	int type;
+	int elements;
+	void *data; // a cstring a symbol_t array
 } symbol_t;
+
 
 // --- Symbol Manipulation
 symbol_t* new_symbol(int type);
@@ -25,6 +26,7 @@ int       is_set_of_strings(symbol_t *sym);
 void      symbol_print(symbol_t *s, int indent_level);
 
 // --- Parsing
+symbol_t* parse_symbol(char* source, int *start);
 int       find_closing_brace(char* source, int start);
 int       find_closing_apostrophe(char *source, int start);
 
@@ -74,7 +76,6 @@ void symbol_print(symbol_t *s, int indent_level) {
 			symbol_t *new_s = ((symbol_t*)s->data) + i;
 			symbol_print(new_s, indent_level + 1);
 		}
-		
 		
 	} else if ( s->type == SYMBOL_STRING ) {
 		printf("STRING, strlen=%li, \"%s\", ", strlen((char*) s->data), (char*) s->data);
@@ -156,7 +157,7 @@ int find_closing_apostrophe(char *source, int start) {
 	return start;
 }
 
-symbol_t* prase_symbol(char* source, int *start) {
+symbol_t* parse_symbol(char* source, int *start) {
 	if(source[*start] == '{') {
 		
 		int closing = find_closing_brace(source, *start);
@@ -165,12 +166,12 @@ symbol_t* prase_symbol(char* source, int *start) {
 		
 		while(*start != closing) {
 			if(source[*start] == '"') {
-				symbol_t *string = prase_symbol(source, start);
+				symbol_t *string = parse_symbol(source, start);
 				append_to_set(set, string);
 			}
 			
 			if(source[*start] == '{') {
-				symbol_t *subset = prase_symbol(source, start);
+				symbol_t *subset = parse_symbol(source, start);
 				append_to_set(set, subset);
 			}
 			
@@ -187,12 +188,12 @@ symbol_t* prase_symbol(char* source, int *start) {
 		
 		int closing = find_closing_apostrophe(source, *start);
 		
-		char *temp_string = malloc(closing - *start);
-		temp_string[closing-*start-1] = 0;
-		memcpy(temp_string, source+*start+1, closing-*start-1);
+		// -1 and +1 to get the string within the apostrophes
+		symbol_t *string = new_symbol(SYMBOL_STRING);
+		string->data = malloc(closing - *start);
+		memcpy(string->data, source+*start+1, closing-*start-1);
+		((char*) string->data)[closing-*start-1] = 0;
 		
-		symbol_t *string = new_symbol_string(temp_string);
-		free(temp_string);
 		*start = closing;
 		
 		return string;
@@ -239,7 +240,7 @@ int main(int argc, char **argv) {
 	
 	char *source = load_file(argv[1]);
 	int start = 0;
-	symbol_t *root = prase_symbol(source, &start);
+	symbol_t *root = parse_symbol(source, &start);
 	if(DEBUG) symbol_print(root, 0);
 
 	int repeat = 1;
