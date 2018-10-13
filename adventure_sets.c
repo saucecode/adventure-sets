@@ -282,8 +282,8 @@ char* reduce_symbol2(symbol_t *root) {
 
 
 int main(int argc, char **argv) {
-	if(argc != 2){
-		printf("Usage: %s <input file>\n", argv[0]);
+	if(argc < 2 || argc > 3){
+		printf("Usage: %s <input file> [number of times to run]\n", argv[0]);
 		return 1;
 	}
 	srand(time(0));
@@ -291,11 +291,11 @@ int main(int argc, char **argv) {
 	char *source = load_file(argv[1]);
 	int start = 0;
 	symbol_t *root = prase_symbol(source, &start);
-	if(DEBUG) symbol_print(root, 0);
 
-	if(DEBUG) printf("\n\nFinal output:\n");
+	int repeat = 1;
+	if(argc == 3) repeat = atoi(argv[2]);
 	
-	for(int i=0; i<4; i+=1){
+	for(int i=0; i<repeat; i+=1){
 		char* red = reduce_symbol2(root);
 		printf("%s\n\n", red);
 		free(red);
