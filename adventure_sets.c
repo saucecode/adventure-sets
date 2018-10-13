@@ -17,12 +17,13 @@ typedef struct {
 
 symbol_t* new_symbol(int type);
 symbol_t* new_symbol_string(char *str);
-symbol_t* symbol_print(symbol_t *s, int indent_level);
+void symbol_print(symbol_t *s, int indent_level);
 void append_to_set(symbol_t *set, symbol_t *new_element);
 int is_set_of_strings(symbol_t *sym);
 symbol_t* flatten_set_of_strings(symbol_t *stringy_set);
 symbol_t* reduce_choice(symbol_t* set);
 int find_closing_brace(char* source, int start);
+int find_closing_apostrophe(char *source, int start);
 
 char* load_file(char *fname) {
 	FILE *f = fopen(fname, "rb");
@@ -53,7 +54,7 @@ symbol_t* new_symbol_string(char *str) {
 	return s;
 }
 
-symbol_t* symbol_print(symbol_t *s, int indent_level) {
+void symbol_print(symbol_t *s, int indent_level) {
 	for(int i=0; i<indent_level; i+=1)
 		printf("\t");
 	
@@ -246,6 +247,8 @@ symbol_t* reduce_symbol(symbol_t *root) {
 	}else if( root->type == SYMBOL_CHOICE ){
 		return &((symbol_t*) root->data)[rand() % root->elements];
 	}
+	
+	return NULL;
 }
 
 
@@ -266,6 +269,6 @@ int main(int argc, char **argv) {
 	
 	if(DEBUG) printf("\n\nFinal output:\n");
 	printf("%s\n", (char*) red->data);
-	
+
 	return 0;
 }
