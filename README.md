@@ -20,7 +20,7 @@ The file format consists of sets, choices, and strings, which the program parses
         { "dog" | "cat"}
     }
 
-which is internally reduced to
+which is internally parsed into
 
     SET[
         STRING, CHOICE[STRING, STRING], STRING, CHOICE[STRING, STRING]
