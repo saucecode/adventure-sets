@@ -1,0 +1,78 @@
+{
+	{
+		"Did you know that " {
+			{ "the " {"Fall "|"Winter "} "equinox " } |
+			{ "leap " {"day "|"year "} } |
+			"Easter " | "Shark Week " | "Toyota Truck Month " |
+			{ "the " { "Harvest"|"Super"|"Blood" } " Moon " } |
+			{ "daylight " {"saving" | "savings"} " time " } |
+			{ "the " {"earliest" | "latest"} " " {"sunrise" | "sunset"} " "}
+		}
+	}
+
+	{
+		{"happens " {"earlier "|"later "|"at the wrong time "} "every year "} |
+		{"might " {"not happen"|"happen twice"} " this year "} |
+		{ "drifts out of sync with the " {
+				"atomic clock in Colorado" | "Sun" | "Moon" | "Zodiac" |
+				{
+					{"Gregorian" | "Mayan" | "Lunar" | "iPhone"} " Calendar"
+				}
+			} " "
+		}
+	}
+	
+	"because of "
+	
+	{
+		{"time zone legislation in " {"Russi" | "Indian" | "Arizon"} "a" } |
+		"a decree by The Pope in the 1500s" |
+		"magnetic field reversal" |
+		{
+			"an arbitrary decision by "
+			{"Benjamin Franklin" | "Isaac Newton" | "FDR"}
+		} |
+		
+		{
+			"the "
+			{
+				"precession" |
+				"libration" |
+				"nutation" |
+				"libation" |
+				"eccentricity" |
+				"obliquity"
+			}
+			" of the "
+			{
+				"Moon" | "Sun" |
+				"Earth's axis" |
+				"equator" | "prime meridian" |
+				{ {"International Date" | "Mason-Dixon"} "Line" }
+			}
+		}
+	}
+	
+	"? Apparently "
+	{
+		"it causes a predictable increase in car accidents." |
+		"that's why we have leap seconds." |
+		"scientists are really worried." |
+		"it's getting worse and no one knows why." |
+		{
+			"it was even more extreme during the "
+			{ "Bronze Age" | "Ice Age" | "Cretaceous" | "1990s"}
+			"."
+		} |
+		{
+			"there's a proposal to fix it, but it "
+			{
+				"will never happen" |
+				"actually makes things worse" |
+				"is stalled in Congress" |
+				"might be unconstitutional"
+			}
+			"."
+		}
+	}
+}
