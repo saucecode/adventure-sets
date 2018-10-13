@@ -26,8 +26,8 @@ int       is_set_of_strings(symbol_t *sym);
 void      symbol_print(symbol_t *s, int indent_level);
 
 // --- Parsing
-symbol_t* parse_symbol(char* source, int *start);
-int       find_closing_brace(char* source, int start);
+symbol_t* parse_symbol(char *source, int *start);
+int       find_closing_brace(char *source, int start);
 int       find_closing_apostrophe(char *source, int start);
 
 // --- Symbol Reduction
@@ -50,7 +50,7 @@ char* load_file(char *fname) {
 }
 
 symbol_t* new_symbol(int type) {
-	symbol_t *s = (symbol_t*) malloc(sizeof(symbol_t));
+	symbol_t *s = malloc(sizeof(symbol_t));
 	s->type = type;
 	s->elements = 0;
 	s->data = NULL;
@@ -58,7 +58,7 @@ symbol_t* new_symbol(int type) {
 }
 
 symbol_t* new_symbol_string(char *str) {
-	symbol_t* s = new_symbol(SYMBOL_STRING);
+	symbol_t *s = new_symbol(SYMBOL_STRING);
 	s->data = malloc(strlen(str) + 1);
 	strcpy(s->data, str);
 	return s;
@@ -73,13 +73,12 @@ void symbol_print(symbol_t *s, int indent_level) {
 		printf("%s, %d elements)\n", (s->type == SYMBOL_SET) ? "SET" : "CHOICE", s->elements);
 		
 		for(int i=0; i<s->elements; i+=1){
-			symbol_t *new_s = ((symbol_t*)s->data) + i;
+			symbol_t *new_s = &((symbol_t*) s->data)[i];
 			symbol_print(new_s, indent_level + 1);
 		}
 		
 	} else if ( s->type == SYMBOL_STRING ) {
-		printf("STRING, strlen=%li, \"%s\", ", strlen((char*) s->data), (char*) s->data);
-		printf(")\n");
+		printf("STRING, strlen=%li, \"%s\")\n", strlen((char*) s->data), (char*) s->data);
 		
 	}
 }
@@ -119,7 +118,7 @@ symbol_t* flatten_set_of_strings(symbol_t *stringy_set) {
 		total_length += strlen(sym_array[i].data);
 	}
 	
-	char* full_string = (char*) malloc(total_length + 1);
+	char* full_string = malloc(total_length + 1);
 	int position = 0;
 	
 	for(int i=0; i<stringy_set->elements; i+=1){
@@ -128,10 +127,11 @@ symbol_t* flatten_set_of_strings(symbol_t *stringy_set) {
 	}
 	
 	symbol_t *output = new_symbol_string(full_string);
+	free(full_string);
 	return output;
 }
 
-int find_closing_brace(char* source, int start) {
+int find_closing_brace(char *source, int start) {
 	int position = start;
 	int counter = 0;
 	
@@ -140,7 +140,7 @@ int find_closing_brace(char* source, int start) {
 		if(source[position] == '}') counter -= 1;
 		position += 1;
 		
-	}while(counter != 0);
+	} while(counter != 0);
 	
 	return position - 1;
 }
@@ -152,27 +152,22 @@ int find_closing_apostrophe(char *source, int start) {
 	
 	do{
 		start += 1;
-	}while(source[start] != '"');
+	} while(source[start] != '"');
 	
 	return start;
 }
 
-symbol_t* parse_symbol(char* source, int *start) {
+symbol_t* parse_symbol(char *source, int *start) {
 	if(source[*start] == '{') {
 		
 		int closing = find_closing_brace(source, *start);
-		*start = *start + 1;
+		*start += 1;
 		symbol_t *set = new_symbol(SYMBOL_SET);
 		
 		while(*start != closing) {
-			if(source[*start] == '"') {
-				symbol_t *string = parse_symbol(source, start);
-				append_to_set(set, string);
-			}
-			
-			if(source[*start] == '{') {
-				symbol_t *subset = parse_symbol(source, start);
-				append_to_set(set, subset);
+			if(source[*start] == '"' || source[*start] == '{') {
+				symbol_t *sub_symbol = parse_symbol(source, start);
+				append_to_set(set, sub_symbol);
 			}
 			
 			if(source[*start] == '|'){
@@ -216,14 +211,17 @@ void reduce_symbol_into(symbol_t *root, char **buffer, int *bsize) {
 		for(int i=0; i<root->elements; i+=1){
 			reduce_symbol_into( &((symbol_t*) root->data)[i], buffer, bsize );
 		}
+		
 	}else if(root->type == SYMBOL_CHOICE){
 		int selected = rand() % root->elements;
 		reduce_symbol_into( &((symbol_t*) root->data)[selected], buffer, bsize );
+		
 	}
 }
 
 char* reduce_symbol(symbol_t *root) {
 	char *str = malloc(1);
+	*str = 0;
 	int bsize = 0;
 	reduce_symbol_into(root, &str, &bsize);
 	
