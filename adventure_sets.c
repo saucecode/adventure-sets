@@ -5,9 +5,9 @@
 
 #define DEBUG 0
 
-const int SYMBOL_STRING = 10;
-const int SYMBOL_SET = 12;
-const int SYMBOL_CHOICE = 14;
+const int SYMBOL_STRING = 2;
+const int SYMBOL_SET = 4;
+const int SYMBOL_CHOICE = 8;
 
 typedef struct {
 	int type; // STRING or SET or CHOICE
@@ -67,11 +67,8 @@ void symbol_print(symbol_t *s, int indent_level) {
 		printf("\t");
 	
 	printf("Symbol(");
-	if( s->type == SYMBOL_SET ) {
-		printf("SET, %d elements, ", s->elements);
-		
-		set_process:
-		printf(")\n");
+	if( s->type & (SYMBOL_SET | SYMBOL_CHOICE) ) {
+		printf("%s, %d elements)\n", (s->type == SYMBOL_SET) ? "SET" : "CHOICE", s->elements);
 		
 		for(int i=0; i<s->elements; i+=1){
 			symbol_t *new_s = ((symbol_t*)s->data) + i;
@@ -83,10 +80,6 @@ void symbol_print(symbol_t *s, int indent_level) {
 		printf("STRING, strlen=%li, \"%s\", ", strlen((char*) s->data), (char*) s->data);
 		printf(")\n");
 		
-	} else if ( s->type == SYMBOL_CHOICE ) {
-		printf("CHOICE, %d elements", s->elements);
-		goto set_process; // lol
-		
 	}
 }
 
@@ -97,13 +90,8 @@ void append_to_set(symbol_t *set, symbol_t *new_element) {
 	}
 	
 	set->elements += 1;
-	
-	symbol_t *new_data = (symbol_t*) malloc( sizeof(symbol_t) * set->elements );
-	
-	memcpy(new_data, set->data, sizeof(symbol_t) * (set->elements - 1));
-	new_data[set->elements-1] = *new_element;
-	if(set->data != NULL) free(set->data);
-	set->data = new_data;
+	set->data = realloc(set->data, sizeof(symbol_t) * set->elements);
+	((symbol_t*) set->data)[set->elements-1] = *new_element;
 }
 
 int is_set_of_strings(symbol_t *sym) {
@@ -215,7 +203,7 @@ symbol_t* prase_symbol(char* source, int *start) {
 	}
 }
 
-// Traverses the input on a random path, adding what it finds to the buffer
+// Recursively traverses the input on a random path, adding what it finds to the buffer
 void reduce_symbol_into(symbol_t *root, char **buffer, int *bsize) {
 	if(root->type == SYMBOL_STRING) {
 		int data_len = strlen(root->data);
@@ -252,6 +240,7 @@ int main(int argc, char **argv) {
 	char *source = load_file(argv[1]);
 	int start = 0;
 	symbol_t *root = prase_symbol(source, &start);
+	if(DEBUG) symbol_print(root, 0);
 
 	int repeat = 1;
 	if(argc == 3) repeat = atoi(argv[2]);
