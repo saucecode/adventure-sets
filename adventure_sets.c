@@ -251,6 +251,35 @@ symbol_t* reduce_symbol(symbol_t *root) {
 	return NULL;
 }
 
+void reduce_symbol_into(symbol_t *root, char **buffer, int *bsize) {
+	if(root->type == SYMBOL_STRING) {
+		int data_len = strlen(root->data);
+		char *new_string = malloc(*bsize + data_len + 1);
+		memcpy( new_string, *buffer, *bsize );
+		memcpy( new_string + *bsize, root->data, data_len );
+		new_string[*bsize + data_len] = 0;
+		free(*buffer);
+		*buffer = new_string;
+		*bsize += data_len;
+		
+	}else if(root->type == SYMBOL_SET){
+		for(int i=0; i<root->elements; i+=1){
+			reduce_symbol_into( &((symbol_t*) root->data)[i], buffer, bsize );
+		}
+	}else if(root->type == SYMBOL_CHOICE){
+		int selected = rand() % root->elements;
+		reduce_symbol_into( &((symbol_t*) root->data)[selected], buffer, bsize );
+	}
+}
+
+char* reduce_symbol2(symbol_t *root) {
+	char *str = malloc(1);
+	int bsize = 0;
+	reduce_symbol_into(root, &str, &bsize);
+	
+	return str;
+}
+
 
 int main(int argc, char **argv) {
 	if(argc != 2){
@@ -263,12 +292,14 @@ int main(int argc, char **argv) {
 	int start = 0;
 	symbol_t *root = prase_symbol(source, &start);
 	if(DEBUG) symbol_print(root, 0);
-	
-	symbol_t *red = reduce_symbol(root);
-	if(DEBUG) symbol_print(red, 0);
-	
-	if(DEBUG) printf("\n\nFinal output:\n");
-	printf("%s\n", (char*) red->data);
 
+	if(DEBUG) printf("\n\nFinal output:\n");
+	
+	for(int i=0; i<4; i+=1){
+		char* red = reduce_symbol2(root);
+		printf("%s\n\n", red);
+		free(red);
+	}
+	
 	return 0;
 }
