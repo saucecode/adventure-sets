@@ -34,6 +34,8 @@ int       find_closing_apostrophe(char *source, int start);
 void      reduce_symbol_into(symbol_t *root, char **buffer, int *bsize);
 char*     reduce_symbol(symbol_t *root);
 
+void      recursively_free(symbol_t *root);
+
 
 char* load_file(char *fname) {
 	FILE *f = fopen(fname, "r");
@@ -59,8 +61,7 @@ symbol_t* new_symbol(int type) {
 
 symbol_t* new_symbol_string(char *str) {
 	symbol_t *s = new_symbol(SYMBOL_STRING);
-	s->data = malloc(strlen(str) + 1);
-	strcpy(s->data, str);
+	s->data = strdup(str);
 	return s;
 }
 
@@ -92,6 +93,7 @@ void append_to_set(symbol_t *set, symbol_t *new_element) {
 	set->elements += 1;
 	set->data = realloc(set->data, sizeof(symbol_t) * set->elements);
 	((symbol_t*) set->data)[set->elements-1] = *new_element;
+	free(new_element);
 }
 
 int is_set_of_strings(symbol_t *sym) {
@@ -228,6 +230,16 @@ char* reduce_symbol(symbol_t *root) {
 	return str;
 }
 
+void recursively_free(symbol_t *root) {
+	if(root->type == SYMBOL_STRING) {
+		free(root->data);
+	} else {
+		for(int i=0; i<root->elements; i+=1) {
+			recursively_free( &((symbol_t*) root->data)[i] );
+		}
+		free(root->data);
+	}
+}
 
 int main(int argc, char **argv) {
 	if(argc < 2 || argc > 3){
@@ -239,6 +251,7 @@ int main(int argc, char **argv) {
 	char *source = load_file(argv[1]);
 	int start = 0;
 	symbol_t *root = parse_symbol(source, &start);
+	free(source);
 	if(DEBUG) symbol_print(root, 0);
 
 	int repeat = 1;
@@ -249,6 +262,9 @@ int main(int argc, char **argv) {
 		printf("%s\n\n", red);
 		free(red);
 	}
+	
+	recursively_free(root);
+	free(root);
 	
 	return 0;
 }
