@@ -15,21 +15,29 @@ typedef struct {
 	void *data; // a cstring if STRING or a symbol_t*
 } symbol_t;
 
+// --- Symbol Manipulation
 symbol_t* new_symbol(int type);
 symbol_t* new_symbol_string(char *str);
-void symbol_print(symbol_t *s, int indent_level);
-void append_to_set(symbol_t *set, symbol_t *new_element);
-int is_set_of_strings(symbol_t *sym);
+void      append_to_set(symbol_t *set, symbol_t *new_element);
 symbol_t* flatten_set_of_strings(symbol_t *stringy_set);
-symbol_t* reduce_choice(symbol_t* set);
-int find_closing_brace(char* source, int start);
-int find_closing_apostrophe(char *source, int start);
+int       is_set_of_strings(symbol_t *sym);
+
+void      symbol_print(symbol_t *s, int indent_level);
+
+// --- Parsing
+int       find_closing_brace(char* source, int start);
+int       find_closing_apostrophe(char *source, int start);
+
+// --- Symbol Reduction
+void      reduce_symbol_into(symbol_t *root, char **buffer, int *bsize);
+char*     reduce_symbol(symbol_t *root);
+
 
 char* load_file(char *fname) {
-	FILE *f = fopen(fname, "rb");
+	FILE *f = fopen(fname, "r");
 	fseek(f, 0, SEEK_END);
 	long fsize = ftell(f);
-	fseek(f, 0, SEEK_SET);  //same as rewind(f);
+	fseek(f, 0, SEEK_SET);
 
 	char *string = malloc(fsize + 1);
 	fread(string, fsize, 1, f);
@@ -134,16 +142,6 @@ symbol_t* flatten_set_of_strings(symbol_t *stringy_set) {
 	return output;
 }
 
-symbol_t* reduce_choice(symbol_t* set) {
-	if( set->elements == 0 ) {
-		printf("Error - attempted to reduce an empty choice");
-		return NULL;
-	}
-	
-	symbol_t *array = (symbol_t*) set->data;
-	return &array[rand() % set->elements];
-}
-
 int find_closing_brace(char* source, int start) {
 	int position = start;
 	int counter = 0;
@@ -217,49 +215,12 @@ symbol_t* prase_symbol(char* source, int *start) {
 	}
 }
 
-/* REDUCTION */
-
-symbol_t* reduce_symbol(symbol_t *root) {
-	if(root->type == SYMBOL_STRING){
-		printf("Symbol is already a string\n");
-		return root;
-	}
-	
-	if(DEBUG) {
-		printf("reducing type: ");
-		symbol_print(root, 0);
-	}
-
-	symbol_t* children = (symbol_t*) root->data;
-
-	while( !is_set_of_strings(root) ) {
-		for(int i=0; i<root->elements; i+=1){
-			
-			symbol_t *child = &children[i];
-			if( child->type != SYMBOL_STRING )
-				*child = *reduce_symbol(child);
-		}
-	}
-	
-	
-	if( root->type == SYMBOL_SET ){
-		return flatten_set_of_strings(root);
-	}else if( root->type == SYMBOL_CHOICE ){
-		return &((symbol_t*) root->data)[rand() % root->elements];
-	}
-	
-	return NULL;
-}
-
+// Traverses the input on a random path, adding what it finds to the buffer
 void reduce_symbol_into(symbol_t *root, char **buffer, int *bsize) {
 	if(root->type == SYMBOL_STRING) {
 		int data_len = strlen(root->data);
-		char *new_string = malloc(*bsize + data_len + 1);
-		memcpy( new_string, *buffer, *bsize );
-		memcpy( new_string + *bsize, root->data, data_len );
-		new_string[*bsize + data_len] = 0;
-		free(*buffer);
-		*buffer = new_string;
+		*buffer = realloc(*buffer, *bsize + data_len + 1);
+		strcpy( *buffer + *bsize, root->data);
 		*bsize += data_len;
 		
 	}else if(root->type == SYMBOL_SET){
@@ -272,7 +233,7 @@ void reduce_symbol_into(symbol_t *root, char **buffer, int *bsize) {
 	}
 }
 
-char* reduce_symbol2(symbol_t *root) {
+char* reduce_symbol(symbol_t *root) {
 	char *str = malloc(1);
 	int bsize = 0;
 	reduce_symbol_into(root, &str, &bsize);
@@ -296,7 +257,7 @@ int main(int argc, char **argv) {
 	if(argc == 3) repeat = atoi(argv[2]);
 	
 	for(int i=0; i<repeat; i+=1){
-		char* red = reduce_symbol2(root);
+		char* red = reduce_symbol(root);
 		printf("%s\n\n", red);
 		free(red);
 	}
